@@ -1,3 +1,5 @@
+[![MELPA](http://melpa.org/packages/import-js-badge.svg)](http://melpa.org/#/import-js)
+
 # Running import-js in Emacs
 
 1. Install import-js
