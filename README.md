@@ -1,10 +1,10 @@
 [![MELPA](http://melpa.org/packages/import-js-badge.svg)](http://melpa.org/#/import-js)
 
-# Running import-js in Emacs
+# Running ImportJS in Emacs
 
-1. Install import-js
+1. Install ImportJS
   * `gem install import-js`
-2. Configure import-js
+2. Configure ImportJS
   * See [Configuration](README.md#configuration)
 2. Install import-js.el for Emacs
   * Install via [MELPA](https://melpa.org/#/import-js)
@@ -26,13 +26,13 @@
     (define-key my-keymap (kbd "a u") 'import-js-import)
     ```
 6. Go directly to a file
-  * The import-js goto interface allows us to jump to a package
-  * `(M-x) import-js-goto` will jump to the appropriate file found by import-js
+  * The ImportJS goto interface allows us to jump to a package
+  * `(M-x) import-js-goto` will jump to the appropriate file found by ImportJS
   * This should also be bound to something useful:
     `(global-set-key (kbd "<f4>") 'import-js-goto)`
 7. Fix your imports
-  * Optionally, you can configure import-js to fix your imports for you, adding
-    unknown variables and removing unused imports. import-js uses eslint to find
+  * Optionally, you can configure ImportJS to fix your imports for you, adding
+    unknown variables and removing unused imports. ImportJS uses eslint to find
     these variables.
   * `eslint` must be in your PATH.
   * eslint plugins must be installed for that specific version of eslint (if
