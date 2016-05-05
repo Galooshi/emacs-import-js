@@ -2,8 +2,8 @@
 
 # Running ImportJS in Emacs
 
-1. Install ImportJS
-  * `gem install import-js`
+1. Install the `importjs` binary:
+  * `npm install import-js -g`
 2. Configure ImportJS
   * See [Configuration](README.md#configuration)
 2. Install import-js.el for Emacs
