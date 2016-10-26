@@ -45,8 +45,9 @@
                            ,@opts
                            ,path))
     (revert-buffer t t t)
-      (with-current-buffer temp-buffer
-        (buffer-string))))
+    (let ((out (with-current-buffer temp-buffer (buffer-string))))
+      (kill-buffer temp-buffer)
+      out)))
 
 (defun import-js-word-at-point ()
   (save-excursion
