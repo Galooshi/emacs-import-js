@@ -36,8 +36,8 @@
 
 (defun import-js-send-input (&rest opts)
   (let ((path buffer-file-name)
-        (temp-buffer (generate-new-buffer "import-js")))
-    (cd (shell-quote-argument import-js-project-root))
+        (temp-buffer (generate-new-buffer "import-js"))
+        (default-directory import-js-project-root))
     (apply 'call-process `("importjs"
                            ,path
                            ,temp-buffer
