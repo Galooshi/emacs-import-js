@@ -74,7 +74,20 @@
   (interactive)
   (let ((goto-list (json-read-from-string
                     (import-js-send-input "goto" (import-js-word-at-point)))))
-    (find-file (cdr (assoc 'goto goto-list)))))
+    (find-file (import-js-locate-goto-file (cdr (assoc 'goto goto-list))))))
+
+(defun import-js-locate-goto-file (goto-value)
+  (let ((goto-file goto-value))
+    (if (file-name-absolute-p goto-value)
+        (let ((goto-located nil)
+              (js-suffixes '(".js" ".jsx")))
+          (if (file-directory-p goto-value)
+              (setf goto-located (locate-file "index" `(,goto-value) js-suffixes))
+            (setf goto-located (locate-file goto-value '("/") js-suffixes)))
+
+          (if goto-located (setf goto-file goto-located))))
+
+    goto-file))
 
 (provide 'import-js)
 ;;; import-js.el ends here
