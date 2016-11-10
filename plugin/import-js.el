@@ -33,16 +33,20 @@
 (defvar import-js-buffer nil "Current import-js process buffer")
 (defvar import-buffer nil "The current buffer under operation")
 
+(defvar import-js-current-project-root nil "Current project root")
+
 (defun import-js-send-input (&rest opts)
   (let ((path buffer-file-name)
-        (temp-buffer (generate-new-buffer "import-js")))
-    (cd (shell-quote-argument (import-js-locate-project-root path)))
+        (temp-buffer (generate-new-buffer "import-js"))
+        (old-default-dir default-directory))
+    (setq default-directory (setq import-js-current-project-root (import-js-locate-project-root path)))
     (apply 'call-process `("importjs"
                            ,path
                            ,temp-buffer
                            nil
                            ,@opts
                            ,path))
+    (setq default-directory old-default-dir)
     (revert-buffer t t t)
     (let ((out (with-current-buffer temp-buffer (buffer-string))))
       (kill-buffer temp-buffer)
@@ -83,7 +87,20 @@
   (interactive)
   (let ((goto-list (json-read-from-string
                     (import-js-send-input "goto" (import-js-word-at-point)))))
-    (find-file (cdr (assoc 'goto goto-list)))))
+    (find-file (import-js-locate-goto-file (cdr (assoc 'goto goto-list))))))
+
+(defun import-js-locate-goto-file (goto-value)
+  (let ((goto-file goto-value))
+    (if (file-name-absolute-p goto-value)
+        (let ((goto-located nil) ; absolute path without suffix, try to fix it
+              (js-suffixes '(".js" ".jsx")))
+          (if (file-directory-p goto-value)
+              (setf goto-located (locate-file "index" `(,goto-value) js-suffixes))
+            (setf goto-located (locate-file goto-value '("/") js-suffixes)))
+
+          (if goto-located (setf goto-file goto-located)))
+      (setf goto-file (concat import-js-current-project-root goto-value))) ; relative path, make it absolute
+    goto-file))
 
 (provide 'import-js)
 ;;; import-js.el ends here
