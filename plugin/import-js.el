@@ -31,13 +31,12 @@
 (require 'json)
 
 (defvar import-js-buffer nil "Current import-js process buffer")
-(defvar import-js-project-root "." "Root of your project")
 (defvar import-buffer nil "The current buffer under operation")
 
 (defun import-js-send-input (&rest opts)
   (let ((path buffer-file-name)
         (temp-buffer (generate-new-buffer "import-js")))
-    (cd (shell-quote-argument import-js-project-root))
+    (cd (shell-quote-argument (import-js-locate-project-root path)))
     (apply 'call-process `("importjs"
                            ,path
                            ,temp-buffer
@@ -48,6 +47,16 @@
     (let ((out (with-current-buffer temp-buffer (buffer-string))))
       (kill-buffer temp-buffer)
       out)))
+
+(defun import-js-locate-project-root (path)
+  "Find the dir containing package.json by walking up the dir tree from path"
+  (let ((parent-dir (file-name-directory path))
+        (project-found nil))
+    (while (and parent-dir (not (setf project-found (file-exists-p (concat parent-dir "package.json")))))
+      (let* ((pd (file-name-directory (directory-file-name parent-dir)))
+             (pd-exists (not (equal pd parent-dir))))
+        (setf parent-dir (if pd-exists pd nil))))
+    (if project-found parent-dir ".")))
 
 (defun import-js-word-at-point ()
   (save-excursion
