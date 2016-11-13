@@ -2,9 +2,9 @@
 ;; Copyright (C) 2015 Henric Trotzig and Kevin Kehl
 ;;
 ;; Author: Kevin Kehl <kevin.kehl@gmail.com>
-;; URL: http://github.com/trotzig/import-js/
+;; URL: http://github.com/Galooshi/emacs-import-js/
 ;; Package-Requires: ((emacs "24"))
-;; Version: 0.1
+;; Version: 0.1.0
 ;; Keywords: javascript
 
 ;; This file is not part of GNU Emacs.
@@ -12,7 +12,7 @@
 ;;; License:
 
 ;; Licensed under the MIT license, see:
-;; http://github.com/trotzig/import-js/blob/master/LICENSE
+;; http://github.com/Galooshi/emacs-import-js/blob/master/LICENSE
 
 ;;; Commentary:
 
@@ -24,7 +24,7 @@
 ;; import-js-goto
 ;;
 ;; For a detailed introduction see:
-;; http://github.com/trotzig/import-js/blob/master/README.md
+;; http://github.com/Galooshi/emacs-import-js/blob/master/README.md
 
 ;;; Code:
 
