@@ -33,16 +33,20 @@
 (defvar import-js-buffer nil "Current import-js process buffer")
 (defvar import-buffer nil "The current buffer under operation")
 
+(defvar import-js-current-project-root nil "Current project root")
+
 (defun import-js-send-input (&rest opts)
   (let ((path buffer-file-name)
-        (temp-buffer (generate-new-buffer "import-js")))
-    (cd (shell-quote-argument (import-js-locate-project-root path)))
+        (temp-buffer (generate-new-buffer "import-js"))
+        (old-default-dir default-directory))
+    (setq default-directory (setq import-js-current-project-root (import-js-locate-project-root path)))
     (apply 'call-process `("importjs"
                            ,path
                            ,temp-buffer
                            nil
                            ,@opts
                            ,path))
+    (setq default-directory old-default-dir)
     (revert-buffer t t t)
     (let ((out (with-current-buffer temp-buffer (buffer-string))))
       (kill-buffer temp-buffer)
@@ -83,7 +87,7 @@
   (interactive)
   (let ((goto-list (json-read-from-string
                     (import-js-send-input "goto" (import-js-word-at-point)))))
-    (find-file (cdr (assoc 'goto goto-list)))))
+    (find-file (expand-file-name (cdr (assoc 'goto goto-list)) import-js-current-project-root))))
 
 (provide 'import-js)
 ;;; import-js.el ends here
