@@ -38,3 +38,8 @@
   * Run with `(M-x) import-js-fix`
   * You can also configure `import-js-fix` to run on save:
     `(add-hook 'after-save-hook 'import-js-fix)`
+
+# Note on Node v6.1.0
+
+I've had issues running import-js in Emacs on Node v6.1.0. Node >= v6.2.0 seems
+to work as expected.
