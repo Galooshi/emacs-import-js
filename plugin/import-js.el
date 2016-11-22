@@ -47,7 +47,6 @@
                            ,@opts
                            ,path))
     (setq default-directory old-default-dir)
-    (revert-buffer t t t)
     (let ((out (with-current-buffer temp-buffer (buffer-string))))
       (kill-buffer temp-buffer)
       out)))
@@ -70,17 +69,26 @@
       (setq module (buffer-substring beg (point)))
       module)))
 
+(defun import-js-write-content (import-data)
+  (let ((file-content (cdr (assoc 'fileContent import-data))))
+    (write-region file-content nil buffer-file-name))
+  (revert-buffer t t t))
+
 ;;;###autoload
 (defun import-js-import ()
   (interactive)
   (save-some-buffers)
-  (import-js-send-input "word" "--overwrite" (import-js-word-at-point)))
+  (let ((import-data (json-read-from-string
+                      (import-js-send-input "word" (import-js-word-at-point)))))
+    (import-js-write-content import-data)))
 
 ;;;###autoload
 (defun import-js-fix ()
   (interactive)
   (save-some-buffers)
-  (import-js-send-input "fix" "--overwrite"))
+  (let ((import-data (json-read-from-string
+                      (import-js-send-input "fix"))))
+    (import-js-write-content import-data)))
 
 ;;;###autoload
 (defun import-js-goto ()
