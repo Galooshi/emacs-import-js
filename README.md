@@ -9,7 +9,8 @@
 3. Install import-js.el for Emacs
   * Install via [MELPA](https://melpa.org/#/import-js)
   * Alternatively, Copy plugins/import-js.el into your Emacs load-path and add
-    `(require 'import-js)` to your config
+    `(require 'import-js)` to your config. You will also need to install
+    [grizzl](https://github.com/grizzl/grizzl)
 4. Configure your project root
   * `(setq import-js-project-root "/path/to/project")`
 5. Import a file!
