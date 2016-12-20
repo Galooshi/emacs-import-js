@@ -77,51 +77,51 @@
     (write-region file-content nil buffer-file-name))
   (revert-buffer t t t))
 
-(defun import-js-add (word file)
+(defun import-js-add (add-alist)
   "Resolves an import with multiple matches"
-  (let ((json-data (json-encode-alist (list (cons word file)))))
+  (let ((json-data (json-encode-alist add-alist)))
     (let ((import-data (json-read-from-string
                         (import-js-send-input "add" json-data))))
-      (import-js-handle-imports import-data word))))
+      (import-js-handle-imports import-data))))
 
 (defun import-js-handle-unresolved (unresolved word)
   (let ((paths (mapcar
                 (lambda (car)
                   (cdr (assoc 'importPath car)))
                 (cdr (assoc-string word unresolved)))))
-    (let ((file (minibuffer-with-setup-hook
-                    (lambda () (make-sparse-keymap))
-                  (grizzl-completing-read (format "Unresolved import (%s)" word)
-                                          (grizzl-make-index
-                                           paths
-                                           'files
-                                           import-js-current-project-root
-                                           nil)))))
-      (import-js-add word file))))
+    (minibuffer-with-setup-hook
+        (lambda () (make-sparse-keymap))
+      (grizzl-completing-read (format "Unresolved import (%s)" word)
+                              (grizzl-make-index
+                               paths
+                               'files
+                               import-js-current-project-root
+                               nil)))))
 
-(defun import-js-handle-imports (import-data word)
+(defun import-js-handle-imports (import-data)
   "Check to see if import is unresolved. If resolved, write file. Else, prompt the user to select"
   (let ((unresolved (cdr (assoc 'unresolvedImports import-data))))
     (if unresolved
-        (import-js-handle-unresolved unresolved word)
+        (import-js-add (mapcar
+                        (lambda (word)
+                          (let ((key (car word)))
+                            (cons key (import-js-handle-unresolved unresolved key))))
+                        unresolved))
       (import-js-write-content import-data))))
 
 ;;;###autoload
 (defun import-js-import ()
   (interactive)
   (save-some-buffers)
-  (let ((word (import-js-word-at-point))
-        (import-data (json-read-from-string
-                      (import-js-send-input "word" (import-js-word-at-point)))))
-    (import-js-handle-imports import-data word)))
+  (import-js-handle-imports (json-read-from-string
+                             (import-js-send-input "word" (import-js-word-at-point)))))
 
 ;;;###autoload
 (defun import-js-fix ()
   (interactive)
   (save-some-buffers)
-  (let ((import-data (json-read-from-string
-                      (import-js-send-input "fix"))))
-    (import-js-write-content import-data)))
+  (import-js-handle-imports (json-read-from-string
+                             (import-js-send-input "fix"))))
 
 ;;;###autoload
 (defun import-js-goto ()
