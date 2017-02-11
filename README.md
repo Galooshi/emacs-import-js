@@ -11,8 +11,9 @@
   * Alternatively, Copy plugins/import-js.el into your Emacs load-path and add
     `(require 'import-js)` to your config. You will also need to install
     [grizzl](https://github.com/grizzl/grizzl)
-4. Configure your project root
-  * `(setq import-js-project-root "/path/to/project")`
+4. Run the import-js daemon
+  * `(M-x) run-import-js`
+  * The daemon will use watchman if installed to improve performance
 5. Import a file!
   * You can use something like `(M-x) import-js-import` with your cursor over
     the desired module
