@@ -33,26 +33,21 @@
 (eval-when-compile
   (require 'grizzl))
 
-(defvar import-js-buffer nil "Current import-js process buffer")
-(defvar import-buffer nil "The current buffer under operation")
-
+(defvar import-js-handler nil "Current import-js output handler")
+(defvar import-js-output "" "Partial import-js output")
+(defvar import-js-process nil "Current import-js process")
 (defvar import-js-current-project-root nil "Current project root")
 
-(defun import-js-send-input (&rest opts)
-  (let ((path buffer-file-name)
-        (temp-buffer (generate-new-buffer "import-js"))
-        (old-default-dir default-directory))
-    (setq default-directory (setq import-js-current-project-root (import-js-locate-project-root path)))
-    (apply 'call-process `("importjs"
-                           ,path
-                           ,temp-buffer
-                           nil
-                           ,@opts
-                           ,path))
-    (setq default-directory old-default-dir)
-    (let ((out (with-current-buffer temp-buffer (buffer-string))))
-      (kill-buffer temp-buffer)
-      out)))
+(defun import-js-check-daemon ()
+  (unless import-js-process
+    (throw 'import-js-daemon "import-js-daemon not running")))
+
+(defun import-js-send-input (input-alist)
+  "Append the current buffer content and path to file to a data alist, and send to import-js"
+  (let ((input-json (json-encode-alist (append input-alist `(("fileContent" . ,(buffer-string))
+                                                             ("pathToFile" . ,(buffer-file-name)))))))
+    (process-send-string import-js-process input-json)
+    (process-send-string import-js-process "\n")))
 
 (defun import-js-locate-project-root (path)
   "Find the dir containing package.json by walking up the dir tree from path"
@@ -65,6 +60,7 @@
     (if project-found parent-dir ".")))
 
 (defun import-js-word-at-point ()
+  "Get the module of interest"
   (save-excursion
     (skip-chars-backward "A-Za-z0-9:_")
     (let ((beg (point)) module)
@@ -73,18 +69,18 @@
       module)))
 
 (defun import-js-write-content (import-data)
+  "Write output data from import-js to the buffer"
   (let ((file-content (cdr (assoc 'fileContent import-data))))
     (write-region file-content nil buffer-file-name))
   (revert-buffer t t t))
 
 (defun import-js-add (add-alist)
   "Resolves an import with multiple matches"
-  (let ((json-data (json-encode-alist add-alist)))
-    (let ((import-data (json-read-from-string
-                        (import-js-send-input "add" json-data))))
-      (import-js-handle-imports import-data))))
+  (import-js-send-input `(("command" . "add")
+                          ("commandArg" . ,add-alist))))
 
 (defun import-js-handle-unresolved (unresolved word)
+  "Map unresolved imports to a path"
   (let ((paths (mapcar
                 (lambda (car)
                   (cdr (assoc 'importPath car)))
@@ -98,37 +94,80 @@
                                import-js-current-project-root
                                nil)))))
 
+(defun import-js-handle-data (process data)
+  "Handles STDOUT from node, which arrives in chunks"
+  (setq import-js-output (concat import-js-output data))
+  (if (string-match "DAEMON active" data)
+      ;; Ignore the startup message
+      (setq import-js-output "")
+    (when (string-match "\n$" data)
+      (let ((import-data import-js-output))
+        (setq import-js-output "")
+        (funcall import-js-handler import-data)))))
+
 (defun import-js-handle-imports (import-data)
   "Check to see if import is unresolved. If resolved, write file. Else, prompt the user to select"
-  (let ((unresolved (cdr (assoc 'unresolvedImports import-data))))
+  (let* ((import-alist (json-read-from-string import-data))
+         (unresolved (cdr (assoc 'unresolvedImports import-alist))))
     (if unresolved
         (import-js-add (mapcar
                         (lambda (word)
                           (let ((key (car word)))
                             (cons key (import-js-handle-unresolved unresolved key))))
                         unresolved))
-      (import-js-write-content import-data))))
+      (import-js-write-content import-alist))))
+
+(defun import-js-handle-goto (import-data)
+  "Navigate to the indicated file"
+  (let ((goto-list (json-read-from-string import-data)))
+    (find-file (cdr (assoc 'goto goto-list)))))
 
 ;;;###autoload
 (defun import-js-import ()
+  "Run import-js on a particular module"
   (interactive)
   (save-some-buffers)
-  (import-js-handle-imports (json-read-from-string
-                             (import-js-send-input "word" (import-js-word-at-point)))))
+  (import-js-check-daemon)
+  (setq import-js-output "")
+  (setq import-js-handler 'import-js-handle-imports)
+  (import-js-send-input `(("command" . "word")
+                          ("commandArg" . ,(import-js-word-at-point)))))
 
 ;;;###autoload
 (defun import-js-fix ()
+  "Run import-js on an entire file, importing or fixing as necessary"
   (interactive)
   (save-some-buffers)
-  (import-js-handle-imports (json-read-from-string
-                             (import-js-send-input "fix"))))
+  (import-js-check-daemon)
+  (setq import-js-output "")
+  (setq import-js-handler 'import-js-handle-imports)
+  (import-js-send-input `(("command" . "fix"))))
 
 ;;;###autoload
 (defun import-js-goto ()
+  "Run import-js goto function, which returns a path to the specified module"
   (interactive)
-  (let ((goto-list (json-read-from-string
-                    (import-js-send-input "goto" (import-js-word-at-point)))))
-    (find-file (expand-file-name (cdr (assoc 'goto goto-list)) import-js-current-project-root))))
+  (import-js-check-daemon)
+  (setq import-js-output "")
+  (setq import-js-handler 'import-js-handle-goto)
+  (import-js-send-input `(("command" . "goto")
+                          ("commandArg" . ,(import-js-word-at-point)))))
+
+;;;###autoload
+(defun run-import-js ()
+  "Start the import-js daemon"
+  (interactive)
+  (kill-import-js)
+  (let ((process-connection-type nil))
+    (setq import-js-process (start-process "import-js" nil "importjsd" "start" (format "--parent-pid=%s" (emacs-pid))))
+    (set-process-filter import-js-process 'import-js-handle-data)))
+
+;;;###autoload
+(defun kill-import-js ()
+  "Kill the currently running import-js daemon process"
+  (interactive)
+  (if import-js-process
+      (delete-process import-js-process)))
 
 (provide 'import-js)
 ;;; import-js.el ends here
