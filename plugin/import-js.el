@@ -34,6 +34,7 @@
   (require 'grizzl))
 
 (defvar import-js-handler nil "Current import-js output handler")
+(defvar import-js-handler-buffer nil "Current import-js buffer to write to when handler is invoked.")
 (defvar import-js-output "" "Partial import-js output")
 (defvar import-js-process nil "Current import-js process")
 (defvar import-js-current-project-root nil "Current project root")
@@ -51,6 +52,7 @@
   (let ((input-json (import-js-json-encode-alist (append input-alist
                                                          `(("fileContent" . ,(buffer-string))
                                                            ("pathToFile" . ,(buffer-file-name)))))))
+    (setq import-js-handler-buffer (current-buffer))
     (process-send-string import-js-process input-json)
     (process-send-string import-js-process "\n")))
 
@@ -76,8 +78,11 @@
 (defun import-js-write-content (import-data)
   "Write output data from import-js to the buffer"
   (let ((file-content (cdr (assoc 'fileContent import-data))))
-    (write-region file-content nil buffer-file-name))
-  (revert-buffer t t t))
+    (write-region file-content nil (buffer-file-name import-js-handler-buffer)))
+  (save-window-excursion
+    (switch-to-buffer import-js-handler-buffer)
+    (revert-buffer t t t))
+  (setq import-js-handler-buffer nil))
 
 (defun import-js-add (add-alist)
   "Resolves an import with multiple matches"
