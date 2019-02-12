@@ -131,7 +131,6 @@
 (defun import-js-import ()
   "Run import-js on a particular module"
   (interactive)
-  (save-some-buffers)
   (import-js-check-daemon)
   (setq import-js-output "")
   (setq import-js-handler 'import-js-handle-imports)
@@ -142,7 +141,6 @@
 (defun import-js-fix ()
   "Run import-js on an entire file, importing or fixing as necessary"
   (interactive)
-  (save-some-buffers)
   (import-js-check-daemon)
   (setq import-js-output "")
   (setq import-js-handler 'import-js-handle-imports)
