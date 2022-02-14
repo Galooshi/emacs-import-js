@@ -167,7 +167,7 @@
   (interactive)
   (kill-import-js)
   (let ((process-connection-type nil))
-    (setq import-js-process (start-process "import-js" nil "importjsd" "start" (format "--parent-pid=%s" (emacs-pid))))
+    (setq import-js-process (start-process "import-js" nil "importjs" "start" (format "--parent-pid=%s" (emacs-pid))))
     (set-process-filter import-js-process 'import-js-handle-data)))
 
 ;;;###autoload
