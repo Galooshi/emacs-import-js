@@ -9,8 +9,7 @@
 3. Install import-js.el for Emacs
   * Install via [MELPA](https://melpa.org/#/import-js)
   * Alternatively, Copy plugins/import-js.el into your Emacs load-path and add
-    `(require 'import-js)` to your config. You will also need to install
-    [grizzl](https://github.com/grizzl/grizzl)
+    `(require 'import-js)` to your config.
 4. Run the import-js daemon
   * `(M-x) run-import-js`
   * The daemon will use watchman if installed to improve performance
