@@ -3,7 +3,7 @@
 ;;
 ;; Author: Kevin Kehl <kevin.kehl@gmail.com>
 ;; URL: http://github.com/Galooshi/emacs-import-js/
-;; Package-Requires: ((grizzl "0.1.0") (emacs "24"))
+;; Package-Requires: ((emacs "24"))
 ;; Version: 1.0.0
 ;; Keywords: javascript
 
@@ -29,9 +29,6 @@
 ;;; Code:
 
 (require 'json)
-
-(eval-when-compile
-  (require 'grizzl))
 
 (defvar import-js-handler nil "Current import-js output handler")
 (defvar import-js-handler-buffer nil "Current import-js buffer to write to when handler is invoked.")
@@ -91,18 +88,18 @@
 
 (defun import-js-handle-unresolved (unresolved word)
   "Map unresolved imports to a path"
-  (let ((paths (mapcar
-                (lambda (car)
-                  (cdr (assoc 'importPath car)))
-                (cdr (assoc-string word unresolved)))))
-    (minibuffer-with-setup-hook
-        (lambda () (make-sparse-keymap))
-      (grizzl-completing-read (format "Unresolved import (%s)" word)
-                              (grizzl-make-index
-                               paths
-                               'files
-                               import-js-current-project-root
-                               nil)))))
+  (let* ((unresolvedImports (cdr (assoc-string word unresolved)))
+         (collection (mapcar
+                      (lambda (car)
+                        (list
+                         (cdr (assoc 'displayName car))
+                         (cdr (assoc 'importPath car))))
+                      unresolvedImports)))
+    (cadr (assoc
+           (completing-read
+            (format "Unresolved import (%s)" word)
+            collection)
+           collection))))
 
 (defun import-js-handle-data (process data)
   "Handles STDOUT from node, which arrives in chunks"
